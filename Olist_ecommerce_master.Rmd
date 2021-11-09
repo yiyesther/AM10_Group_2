@@ -1,0 +1,15 @@
+---
+title: "Olist_ecommerce_master"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load the data
+The whole dataset can be found on https://www.kaggle.com/olistbr/brazilian-ecommerce
+
+```{r, load data}
+summary(cars)
+```
