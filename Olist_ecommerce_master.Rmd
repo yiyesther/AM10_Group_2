@@ -7,9 +7,23 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r, load libraries}
+library(tidyverse) #to read csv files
+
+```
+
+
 ## Load the data
 The whole dataset can be found on https://www.kaggle.com/olistbr/brazilian-ecommerce
 
 ```{r, load data}
-summary(cars)
+customer <- read_csv("olist_customers_dataset.csv")
+geolocation <- read_csv("olist_geolocation_dataset.csv")
+order_item <- read_csv("olist_order_items_dataset.csv")
+order_payment <- read_csv("olist_order_payments_dataset.csv")
+order_review <- read_csv("olist_order_reviews_dataset.csv")
+order <- read_csv("olist_orders_dataset.csv")
+product <- read_csv("olist_products_dataset.csv")
+seller <- read_csv("olist_sellers_dataset.csv")
+product_category <- read_csv("product_category_name_translation.csv")
 ```
