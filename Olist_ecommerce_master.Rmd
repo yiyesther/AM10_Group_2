@@ -9,7 +9,17 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r, load libraries}
 library(tidyverse) #to read csv files
-
+library(lubridate) # to handle dates
+library(GGally) # for correlation-scatter plot matrix
+library(ggfortify) # to produce residual diagnostic plots
+library(rsample) # to split dataframe in training- & testing sets
+library(janitor) # clean_names()
+library(broom) # use broom:augment() to get tidy table with regression output, residuals, etc
+library(huxtable) # to get summary table of all models produced
+library(caret) # to train more advanced models (k-fold cross-validation, stepwise regression, LASSO)
+library(nnet) # to calculate the maximum value of a vector
+library(zoo) #to allow for time series operations
+library(hms)
 ```
 
 
@@ -27,3 +37,26 @@ product <- read_csv("olist_products_dataset.csv")
 seller <- read_csv("olist_sellers_dataset.csv")
 product_category <- read_csv("product_category_name_translation.csv")
 ```
+```{r}
+#Join the dataframes
+ols_raw <- order %>% 
+  left_join(customer, by = "customer_id") %>% 
+  left_join(order_item, by = "order_id") %>% 
+  left_join(order_payment, by = "order_id") %>% 
+  left_join(order_review, by = "order_id") %>% 
+  left_join(product, by = "product_id") %>% 
+  left_join(seller, by = "seller_id") %>% 
+  left_join(product_category, by = "product_category_name") %>% 
+  clean_names()
+
+```
+
+```{r}
+ols_clean <- ols_raw %>% 
+  #Comment message in Portuguese
+  select(-review_comment_message)
+```
+
+
+
+
