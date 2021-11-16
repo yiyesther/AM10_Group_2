@@ -1,0 +1,122 @@
+---
+title: "Olist_ecommerce_master"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, load libraries}
+library(tidyverse) #to read csv files
+library(lubridate) # to handle dates
+library(GGally) # for correlation-scatter plot matrix
+library(ggfortify) # to produce residual diagnostic plots
+library(rsample) # to split dataframe in training- & testing sets
+library(janitor) # clean_names()
+library(broom) # use broom:augment() to get tidy table with regression output, residuals, etc
+library(huxtable) # to get summary table of all models produced
+library(caret) # to train more advanced models (k-fold cross-validation, stepwise regression, LASSO)
+library(nnet) # to calculate the maximum value of a vector
+library(zoo) #to allow for time series operations
+library(hms)
+library(dplyr)
+```
+
+
+## Load the data
+The whole dataset can be found on https://www.kaggle.com/olistbr/brazilian-ecommerce
+
+```{r, load data}
+customer <- read_csv("olist_customers_dataset.csv")
+geolocation <- read_csv("olist_geolocation_dataset.csv")
+order_item <- read_csv("olist_order_items_dataset.csv")
+order_payment <- read_csv("olist_order_payments_dataset.csv")
+order_review <- read_csv("olist_order_reviews_dataset.csv")
+order <- read_csv("olist_orders_dataset.csv")
+product <- read_csv("olist_products_dataset.csv")
+seller <- read_csv("olist_sellers_dataset.csv")
+product_category <- read_csv("product_category_name_translation.csv")
+```
+```{r}
+#Join the dataframes
+ols_raw <- order %>% 
+  left_join(customer, by = "customer_id") %>% 
+  left_join(order_item, by = "order_id") %>% 
+  left_join(order_payment, by = "order_id") %>% 
+  left_join(order_review, by = "order_id") %>% 
+  left_join(product, by = "product_id") %>% 
+  left_join(seller, by = "seller_id") %>% 
+  left_join(product_category, by = "product_category_name") %>% 
+  clean_names()
+
+```
+
+```{r}
+ols_clean <- ols_raw %>% 
+  #Comment message in Portuguese
+  select(-review_comment_message)
+```
+
+```{r huxtable-stuff, include=FALSE}
+
+#I start all my markdowm files by laoding the libraries I use throughout. This is for quick reference
+options("huxtable.knit_print_df" = FALSE)
+
+if(!is.element("tidyverse", installed.packages()[,1]))
+{  install.packages("tidyverse")}
+if(!is.element("cluster", installed.packages()[,1]))
+{  install.packages("cluster")}
+if(!is.element("factoextra", installed.packages()[,1]))
+{  install.packages("factoextra")}
+if(!is.element("Hmisc", installed.packages()[,1]))
+{  install.packages("Hmisc")}
+
+require(tidyverse)
+require(Hmisc)
+require(digest)
+require(cluster)    # clustering algorithms
+require(factoextra) # an umbrealla library for clustering algorithms & visualizations
+```
+
+```{r}
+purchase_freq <- ols_clean %>% 
+  group_by(customer_unique_id,product_category_name_english) %>% 
+  dplyr::summarise(freq = n()) %>% 
+  group_by(customer_unique_id) %>% 
+  dplyr::summarise(max_freq = max(freq))
+  
+
+
+
+customer_info <- ols_clean %>% 
+  select(customer_unique_id,
+         review_score,
+         payment_value,
+         product_category_name,
+         customer_city,
+         payment_type) %>% 
+  group_by(customer_unique_id) %>% 
+  dplyr::summarise(average_review_score = mean(review_score),
+                   average_payment_value = mean(average_payment_value))
+```
+
+```{r prepare-data2, message=FALSE, warning=FALSE}
+library(factoextra)
+
+model_kmeans_2clusters<-eclust(customer, "kmeans", k = 2,nstart = 50, graph = FALSE)
+
+#Let's check the components of this object.
+summary(model_kmeans_2clusters)
+
+#Size of the clusters
+
+model_kmeans_2clusters$size
+
+
+```
+
+
+
+
+
