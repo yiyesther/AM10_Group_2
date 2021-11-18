@@ -9,7 +9,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r, load libraries}
 library(tidyverse) #to read csv files
-library(lubridate) # to handle dates
+library(lubridate)# to handle dates
+library(skimr)
 library(GGally) # for correlation-scatter plot matrix
 library(ggfortify) # to produce residual diagnostic plots
 library(rsample) # to split dataframe in training- & testing sets
@@ -55,7 +56,7 @@ ols_raw <- order %>%
 ```{r}
 ols_clean <- ols_raw %>% 
   #Comment message in Portuguese
-  select(-review_comment_message)
+  select(-review_comment_message) 
 ```
 
 ```{r huxtable-stuff, include=FALSE}
@@ -79,42 +80,61 @@ require(cluster)    # clustering algorithms
 require(factoextra) # an umbrealla library for clustering algorithms & visualizations
 ```
 
-```{r}
-purchase_freq <- ols_clean %>% 
-  group_by(customer_unique_id,product_category_name_english) %>% 
-  dplyr::summarise(freq = n()) %>% 
-  group_by(customer_unique_id) %>% 
-  dplyr::summarise(max_freq = max(freq))
-  
+```{r distinct orders}
+#There are multiple entries for one order because when we joined order with order_payment, there could be multiple payment methods for one order, thus resulting in multiple rows for one order. Here we only keep one row for each order and sum up the total payment amount. 
+
+order_total_amount <- ols_clean %>% 
+  group_by(order_id) %>% 
+  summarise(total_payment = sum(payment_value))
 
 
-
-customer_info <- ols_clean %>% 
-  select(customer_unique_id,
+purchase_info <- ols_clean %>% 
+  select(order_id,
+         customer_unique_id,
          review_score,
-         payment_value,
-         product_category_name,
-         customer_city,
-         payment_type) %>% 
+         product_category_name_english,
+         customer_city) %>% 
+  distinct(order_id, .keep_all = TRUE)
+
+purchase_info <- left_join(purchase_info,order_total_amount,by = "order_id") 
+```
+
+```{r customer info}
+customer_purchase <- purchase_info %>% 
+  count(customer_unique_id, product_category_name_english) %>% 
   group_by(customer_unique_id) %>% 
-  dplyr::summarise(average_review_score = mean(review_score),
-                   average_payment_value = mean(average_payment_value))
+  mutate(total_purchase = sum(n),
+         category_percent = round((n/total_purchase)*100,2)) %>% 
+  select(-n, -total_purchase) %>% 
+  pivot_wider(names_from = product_category_name_english,
+              values_from = category_percent)
+
+unique_customer <- customer %>% 
+  distinct(customer_unique_id,.keep_all = TRUE) %>% 
+  select(-customer_id)
+
+unique_customer_purchase <- purchase_info %>% 
+  group_by(customer_unique_id) %>% 
+  summarise(total_amount = sum(total_payment))
+
+unique_customer_review <- purchase_info %>% 
+  group_by(customer_unique_id) %>% 
+  summarise(average_review_score = mean(review_score))
+
+customer_info <- customer_purchase %>% 
+  left_join(unique_customer, by = "customer_unique_id") %>% 
+  left_join(unique_customer_purchase, by = "customer_unique_id") %>% 
+  left_join(unique_customer_review, by = "customer_unique_id") %>% 
+  ungroup() %>% 
+  select(-customer_zip_code_prefix,-customer_state)
+
+customer_info[is.na(customer_info)] <- 0
+
+
 ```
 
-```{r prepare-data2, message=FALSE, warning=FALSE}
-library(factoextra)
-
-model_kmeans_2clusters<-eclust(customer, "kmeans", k = 2,nstart = 50, graph = FALSE)
-
-#Let's check the components of this object.
-summary(model_kmeans_2clusters)
-
-#Size of the clusters
-
-model_kmeans_2clusters$size
 
 
-```
 
 
 
