@@ -56,7 +56,7 @@ ols_raw <- order %>%
 ```{r}
 ols_clean <- ols_raw %>% 
   #Comment message in Portuguese
-  select(-review_comment_message) 
+  select(-review_comment_message)
 ```
 
 ```{r huxtable-stuff, include=FALSE}
@@ -134,9 +134,211 @@ customer_info[is.na(customer_info)] <- 0
 ```
 
 
+```{r}
+to_graph <- customer_info %>% 
+  select(customer_unique_id, customer_city, total_amount, average_review_score) %>% 
+  mutate(rating = ifelse(average_review_score < 3, "low","high"))
+
+#to_graph$rating <- factor(to_graph$rating, levels = c("low","medium","high"))           
+```
+
+```{r}
+brazil_pop <- read_csv("Brazil_pop.csv")
+brazil_pop$name <- tolower(brazil_pop$name)
+names(brazil_pop)[names(brazil_pop) == '2021'] <- 'population'
+```
+
+
+```{r}
+to_graph2 <- to_graph %>% 
+  group_by(customer_city) %>% 
+  summarise(med_city_spend = median(total_amount), avg_city_spend = mean(total_amount) , obs = n(), tot_spend = sum(total_amount)) %>% 
+  filter(obs > 1000)
+```
+
+```{r}
+to_graph3 <- left_join(to_graph2, brazil_pop, customer, by = c("customer_city" = "name"))
+to_graph3 <- to_graph3 %>% 
+  mutate(spend_pp = tot_spend/population)
+```
+
+```{r}
+ggplot(data = to_graph3, aes(x = reorder(customer_city, -spend_pp), y = spend_pp)) + geom_col() + labs(x = "City", y = "Spending per person")
+```
+
+```{r}
+ggplot(data = to_graph2, aes(x = reorder(customer_city, -med_city_spend), y = med_city_spend)) + geom_col() + labs(x = "City", y = "Median spend in Brazilian Real", title = "Median spending is similar across cities")
+```
+
+```{r}
+rating_graph2 <- to_graph %>% 
+  group_by(rating) %>% 
+  summarise(med_review_spend = median(total_amount), avg_review_spend = mean(total_amount) , obs = n(),   tot_spend = sum(total_amount)) 
+rating_graph2
+```
+```{r}
+ggplot(data = rating_graph2, aes(x = average_review_score, y = med_review_spend)) + 
+  geom_col() + 
+  labs(x = "Score", y = "Median spend in Brazilian Real", title = "Median spending is similar across scores")
+```
 
 
 
+```{r}
+rating_cat <- customer_info %>% 
+  mutate(rating = ifelse(average_review_score <=2, "low", ifelse(average_review_score < 4, "medium","high"))) %>%  
+  pivot_longer(cols = bed_bath_table:la_cuisine, names_to = "category", values_to = "perc") %>% 
+  filter(perc != 0 & category != "NA")
+
+high_rating_cat <- rating_cat %>% 
+  filter(rating == "high") %>% 
+  count(category) %>% 
+  slice_max(n, n = 10) %>% 
+  mutate(rating = "high")
+
+medium_rating_cat <- rating_cat %>% 
+  filter(rating == "medium") %>% 
+  count(category) %>% 
+  slice_max(n, n = 10) %>% 
+  mutate(rating = "medium")
+
+low_rating_cat <- rating_cat %>% 
+  filter(rating == "low") %>% 
+  count(category) %>% 
+  slice_max(n, n = 10) %>% 
+  mutate(rating = "low")
+
+rating_cat <- high_rating_cat %>% 
+  
+  rbind(low_rating_cat) %>% 
+  mutate(rating = factor(rating,levels = c("high","low")))
+
+ggplot(data = rating_cat, aes(y = tidytext::reorder_within(category, n, rating), x = n,
+                              fill = category)) +
+  geom_col() +
+  tidytext::scale_y_reordered() +
+  facet_wrap(~rating, scales = "free_y", nrow =3)
+```
+
+```{r}
+cred_inst <- order_payment %>% 
+  group_by(order_id) %>% 
+  mutate(total_payment = sum(payment_value),
+         payment_perc = payment_value / total_payment) %>% 
+  ungroup() %>% 
+  filter(payment_installments >1 ) %>% 
+  mutate(installments = ifelse(payment_installments <= 3, "1-3", 
+                               ifelse(payment_installments <= 6, "4-6",
+                                      ifelse(payment_installments <= 9, "7-9",
+                                             ifelse(payment_installments <= 12, "10-12",
+                                      "12-24"))))) %>% 
+  group_by(installments) %>% 
+  summarise(cout = n(),
+            mean_price = mean(total_payment),
+            median_price = median(total_payment),
+            average_perc = mean(payment_perc)) 
+
+
+cred_inst$installments <- factor(cred_inst$installments,levels = c("1-3","4-6","7-9","10-12","12-24"))
+cred_inst
+
+```
+```{r}
+cred_inst %>% ggplot(aes(x = median_price, y = installments)) +
+  geom_point() +
+  geom_line(group = 1) +
+  labs(x ="Median Price" , y = "Number of Installments")
+```
+
+```{r}
+voucher <- order_payment %>% 
+  group_by(order_id) %>% 
+  mutate(total_payment = sum(payment_value),
+         payment_perc = payment_value / total_payment) %>% 
+  ungroup() %>% 
+  filter(payment_type == "voucher" ) %>% 
+  group_by(order_id) %>% 
+  mutate(voucher_total_value = sum(payment_value),
+         value_left = total_payment - voucher_total_value)
+
+voucher_value_left <- voucher %>% 
+  select(order_id,value_left) %>% 
+  distinct()
+
+cred_voucher <- order_payment %>% 
+  left_join(voucher_value_left, by = "order_id") %>% 
+  filter(!is.na(value_left) & value_left > 0 & payment_type == "credit_card") %>% 
+  mutate(installments = ifelse(payment_installments <= 3, "1-3", 
+                               ifelse(payment_installments <= 6, "4-6",
+                                      ifelse(payment_installments <= 9, "7-9",
+                                             ifelse(payment_installments <= 12, "10-12",
+                                      "12-24"))))) %>% 
+  group_by(installments) %>% 
+  summarise(cout = n(),
+            mean_price = mean(value_left),
+            median_price = median(value_left))
+
+cred_voucher$installments <- factor(cred_voucher$installments,levels = c("1-3","4-6","7-9","10-12","12-24"))
+cred_voucher
+```
+
+```{r}
+cred_voucher %>% ggplot(aes(x = median_price, y = installments)) +
+  geom_point() +
+  geom_line(group = 1) +
+  labs(x ="Median Price" , y = "Number of Installments")
+```
+
+
+
+```{r}
+
+cred_no_voucher <- order_payment %>% 
+  group_by(order_id) %>% 
+  mutate(total_payment = sum(payment_value),
+         payment_perc = payment_value / total_payment) %>% 
+  ungroup() %>% 
+  left_join(voucher_value_left, by = "order_id") %>% 
+  filter(is.na(value_left) & payment_type == "credit_card") %>% 
+  mutate(installments = ifelse(payment_installments <= 3, "1-3", 
+                               ifelse(payment_installments <= 6, "4-6",
+                                      ifelse(payment_installments <= 9, "7-9",
+                                             ifelse(payment_installments <= 12, "10-12",
+                                      "12-24"))))) %>% 
+  group_by(installments) %>% 
+  summarise(cout = n(),
+            mean_price = mean(total_payment),
+            median_price = median(total_payment),
+            average_perc = mean(payment_perc))
+
+cred_no_voucher$installments <- factor(cred_no_voucher$installments,levels = c("1-3","4-6","7-9","10-12","12-24"))
+cred_no_voucher
+
+
+```
+
+
+```{r}
+cred_voucher %>% ggplot(aes(x = median_price, y = installments)) +
+  geom_point() +
+  geom_line(group = 1) +
+  labs(x ="Median Price" , y = "Number of Installments")
+
+```
+
+```{r}
+ggplot() +
+  geom_point(data = cred_voucher, 
+             aes(x = median_price, y = installments)) +
+  geom_point(data = cred_no_voucher, 
+             aes(x = median_price, y = installments)) +
+  geom_line(data = cred_voucher, 
+            aes(x = median_price, y = installments, group = 1)) +
+  geom_line(data = cred_no_voucher, 
+            aes(x = median_price, y = installments, group = 1),
+            color = "darkred") +
+  labs(x ="Median Price" , y = "Number of Installments")
+```
 
 
 
