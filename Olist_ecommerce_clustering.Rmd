@@ -78,6 +78,7 @@ require(Hmisc)
 require(digest)
 require(cluster)    # clustering algorithms
 require(factoextra) # an umbrealla library for clustering algorithms & visualizations
+require(hrbrthemes)
 ```
 
 ```{r distinct orders}
@@ -243,6 +244,12 @@ cred_inst <- order_payment %>%
 cred_inst$price_range <- factor(cred_inst$price_range,levels = c("<100","100-500","500-1000","1000-5000",">5000"))
 cred_inst
 
+
+```
+
+```{r}
+cred_inst %>% ggplot(aes(x = total_payment)) +
+  geom_density()
 ```
 
 
@@ -271,19 +278,19 @@ voucher_value_left <- voucher %>%
 cred_voucher <- order_payment %>% 
   left_join(voucher_value_left, by = "order_id") %>% 
   filter(!is.na(value_left) & value_left > 0 & payment_type == "credit_card") %>% 
-  mutate(value_range = ifelse(value_left <= 30, "<30", 
-                               ifelse(value_left <= 100, "30-100",
-                                      ifelse(value_left <= 500 , "100-500",
-                                             ifelse(value_left <= 1000, "500-1000",
-                                                    ifelse(value_left <= 5000, "1000-5000",
+  mutate(value_range = ifelse(value_left <= 50, "<50", 
+                               ifelse(value_left <= 100, "50-100",
+                                      ifelse(value_left <= 200 , "100-200",
+                                             ifelse(value_left <= 500, "200-500",
+                                                    ifelse(value_left <= 5000, "500-5000",
                                       ">5000")))))) %>% 
   group_by(value_range) %>% 
   summarise(count = n(),
             mean_ins = mean(payment_installments),
             median_ins = median(payment_installments)) %>% 
-  mutate(voucher = rep(1,5))
+  mutate(voucher = rep("Yes",5))
 
-cred_voucher$value_range <- factor(cred_voucher$value_range,levels = c("<30","30-100","100-500","500-1000","1000-5000",">5000"))
+cred_voucher$value_range <- factor(cred_voucher$value_range,levels = c("<50","50-100","100-200","200-500","500-5000",">5000"))
 cred_voucher
 ```
 
@@ -306,19 +313,19 @@ cred_no_voucher <- order_payment %>%
   ungroup() %>% 
   left_join(voucher_value_left, by = "order_id") %>% 
   filter(is.na(value_left) & payment_type == "credit_card") %>% 
-  mutate(value_range = ifelse(total_payment <= 30, "<30", 
-                               ifelse(total_payment <= 100, "30-100",
-                                      ifelse(total_payment <= 500 , "100-500",
-                                             ifelse(total_payment <= 1000, "500-1000",
-                                                    ifelse(total_payment <= 5000, "1000-5000",
+  mutate(value_range = ifelse(total_payment <= 50, "<50", 
+                               ifelse(total_payment <= 100, "50-100",
+                                      ifelse(total_payment <= 200 , "100-200",
+                                             ifelse(total_payment <= 500, "200-500",
+                                                    ifelse(total_payment <= 5000, "500-5000",
                                       ">5000")))))) %>% 
   group_by(value_range) %>% 
   summarise(count = n(),
             mean_ins = mean(payment_installments),
             median_ins = median(payment_installments)) %>% 
-  mutate(voucher = rep(0,6))
+  mutate(voucher = rep("No",6))
 
-cred_no_voucher$value_range <- factor(cred_no_voucher$value_range,levels = c("<30","30-100","100-500","500-1000","1000-5000",">5000"))
+cred_no_voucher$value_range <- factor(cred_no_voucher$value_range,levels = c("<50","50-100","100-200","200-500","500-5000",">5000"))
 cred_no_voucher
 
 
@@ -335,14 +342,63 @@ cred_no_voucher %>% ggplot(aes(x = value_range, y = median_ins)) +
 
 ```{r}
 voucher_ins <- rbind(cred_voucher,cred_no_voucher)
+voucher_ins$voucher <- factor(voucher_ins$voucher, levels = c("Yes","No"))
 ```
 
-```{r}
+```{r,fig.height=6, fig.width=6}
+
+label1 <- "At very high price, using credit cards \n do not necessarily link to affordability."
+label2 <- "For the same value, customers pay with more installments \n if it's the remaining value after deducting voucher."
+
 ggplot(data = voucher_ins, aes(x = value_range, y = median_ins,
                                colour = voucher, group = voucher))+
   geom_point() +
   geom_line() +
-  labs(x ="Median Price" , y = "Number of Installments")
+  labs(title = "Vouchers entice people to purchase even if they need more installments",
+       subtitle = "Median number of installments used by customers paying with credit cards for the total price or the remaining value after using vouchers",
+  x ="Value Range" , y = "Median Number of Installments",
+       colour = "Voucher") +
+  
+  geom_curve(
+    data = data.frame(x = 5.5, y = 3.2, xend = 6, yend = 4.3),
+    mapping = aes(x = x, y = y, xend = xend, yend = yend),
+    colour = "white",
+    size = 0.5,
+    curvature = 0.25,
+    arrow = arrow(length = unit(2, "mm"), type = "closed"),
+    inherit.aes = FALSE
+  ) +
+  
+   geom_curve(
+    data = data.frame(x = 2.7, y = 4, xend = 2, yend = 4.4),
+    mapping = aes(x = x, y = y, xend = xend, yend = yend),
+    colour = "white",
+    size = 0.5,
+    curvature = -0.25,
+    arrow = arrow(length = unit(2, "mm"), type = "closed"),
+    inherit.aes = FALSE
+  ) +
+  
+  geom_text(
+    data = data.frame(x = 5.5, y = 3, label = label1),
+    aes(x = x, y = y, label = label),
+    colour="#F5BDAC",
+    family="Lato",
+    hjust = 0.5,
+    lineheight = .8,
+    inherit.aes = FALSE
+  ) +
+  
+  annotate("rect", xmin = 2.9, xmax = 3.1, ymin = 2.8, ymax = 4.2, alpha = 0) +
+  annotate("text", x = 2, y = 4.8, label = label2, colour = "#CAE2F5") +
+  
+  theme_ft_rc(grid="", strip_text_face = "bold") +
+  theme(strip.text = element_text(color = "white",size = 20),
+        strip.text.y = element_text(angle=0),
+        plot.title = element_text(size = 15),
+        plot.subtitle = element_text(size = 10),
+        axis.title.x = element_text(hjust = 0.5, size = 10),
+        axis.title.y = element_text(hjust = 0.5, size = 10))
 ```
 
 
