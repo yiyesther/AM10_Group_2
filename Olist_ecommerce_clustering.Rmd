@@ -177,7 +177,8 @@ rating_graph2 <- to_graph %>%
 rating_graph2
 ```
 ```{r}
-ggplot(data = rating_graph2, aes(x = average_review_score, y = med_review_spend)) + 
+rating_graph2 %>% 
+  ggplot(aes(x = avg_review_spend, y = med_review_spend)) + 
   geom_col() + 
   labs(x = "Score", y = "Median spend in Brazilian Real", title = "Median spending is similar across scores")
 ```
@@ -227,27 +228,29 @@ cred_inst <- order_payment %>%
          payment_perc = payment_value / total_payment) %>% 
   ungroup() %>% 
   filter(payment_installments >1 ) %>% 
-  mutate(installments = ifelse(payment_installments <= 3, "1-3", 
-                               ifelse(payment_installments <= 6, "4-6",
-                                      ifelse(payment_installments <= 9, "7-9",
-                                             ifelse(payment_installments <= 12, "10-12",
-                                      "12-24"))))) %>% 
-  group_by(installments) %>% 
-  summarise(cout = n(),
-            mean_price = mean(total_payment),
-            median_price = median(total_payment),
+  mutate(price_range = ifelse(total_payment <= 100, "<100", 
+                               ifelse(total_payment <= 500, "100-500",
+                                      ifelse(total_payment <= 1000 , "500-1000",
+                                             ifelse(total_payment <= 5000, "1000-5000",
+                                      ">5000"))))) %>% 
+  group_by(price_range) %>% 
+  summarise(count = n(),
+            mean_ins = mean(payment_installments),
+            median_ins = median(payment_installments),
             average_perc = mean(payment_perc)) 
 
 
-cred_inst$installments <- factor(cred_inst$installments,levels = c("1-3","4-6","7-9","10-12","12-24"))
+cred_inst$price_range <- factor(cred_inst$price_range,levels = c("<100","100-500","500-1000","1000-5000",">5000"))
 cred_inst
 
 ```
+
+
 ```{r}
-cred_inst %>% ggplot(aes(x = median_price, y = installments)) +
+cred_inst %>% ggplot(aes(x = price_range, y = median_ins)) +
   geom_point() +
   geom_line(group = 1) +
-  labs(x ="Median Price" , y = "Number of Installments")
+  labs(x ="Price Range" , y = "Median Number of Installments")
 ```
 
 ```{r}
@@ -268,25 +271,28 @@ voucher_value_left <- voucher %>%
 cred_voucher <- order_payment %>% 
   left_join(voucher_value_left, by = "order_id") %>% 
   filter(!is.na(value_left) & value_left > 0 & payment_type == "credit_card") %>% 
-  mutate(installments = ifelse(payment_installments <= 3, "1-3", 
-                               ifelse(payment_installments <= 6, "4-6",
-                                      ifelse(payment_installments <= 9, "7-9",
-                                             ifelse(payment_installments <= 12, "10-12",
-                                      "12-24"))))) %>% 
-  group_by(installments) %>% 
-  summarise(cout = n(),
-            mean_price = mean(value_left),
-            median_price = median(value_left))
+  mutate(value_range = ifelse(value_left <= 30, "<30", 
+                               ifelse(value_left <= 100, "30-100",
+                                      ifelse(value_left <= 500 , "100-500",
+                                             ifelse(value_left <= 1000, "500-1000",
+                                                    ifelse(value_left <= 5000, "1000-5000",
+                                      ">5000")))))) %>% 
+  group_by(value_range) %>% 
+  summarise(count = n(),
+            mean_ins = mean(payment_installments),
+            median_ins = median(payment_installments)) %>% 
+  mutate(voucher = rep(1,5))
 
-cred_voucher$installments <- factor(cred_voucher$installments,levels = c("1-3","4-6","7-9","10-12","12-24"))
+cred_voucher$value_range <- factor(cred_voucher$value_range,levels = c("<30","30-100","100-500","500-1000","1000-5000",">5000"))
 cred_voucher
 ```
 
 ```{r}
-cred_voucher %>% ggplot(aes(x = median_price, y = installments)) +
+cred_voucher %>% ggplot(aes(x = value_range, y = median_ins)) +
   geom_point() +
   geom_line(group = 1) +
-  labs(x ="Median Price" , y = "Number of Installments")
+  labs(x ="Value Paid Exluding Voucher" , y = "Median Number of Installments")
+
 ```
 
 
@@ -300,18 +306,19 @@ cred_no_voucher <- order_payment %>%
   ungroup() %>% 
   left_join(voucher_value_left, by = "order_id") %>% 
   filter(is.na(value_left) & payment_type == "credit_card") %>% 
-  mutate(installments = ifelse(payment_installments <= 3, "1-3", 
-                               ifelse(payment_installments <= 6, "4-6",
-                                      ifelse(payment_installments <= 9, "7-9",
-                                             ifelse(payment_installments <= 12, "10-12",
-                                      "12-24"))))) %>% 
-  group_by(installments) %>% 
-  summarise(cout = n(),
-            mean_price = mean(total_payment),
-            median_price = median(total_payment),
-            average_perc = mean(payment_perc))
+  mutate(value_range = ifelse(total_payment <= 30, "<30", 
+                               ifelse(total_payment <= 100, "30-100",
+                                      ifelse(total_payment <= 500 , "100-500",
+                                             ifelse(total_payment <= 1000, "500-1000",
+                                                    ifelse(total_payment <= 5000, "1000-5000",
+                                      ">5000")))))) %>% 
+  group_by(value_range) %>% 
+  summarise(count = n(),
+            mean_ins = mean(payment_installments),
+            median_ins = median(payment_installments)) %>% 
+  mutate(voucher = rep(0,6))
 
-cred_no_voucher$installments <- factor(cred_no_voucher$installments,levels = c("1-3","4-6","7-9","10-12","12-24"))
+cred_no_voucher$value_range <- factor(cred_no_voucher$value_range,levels = c("<30","30-100","100-500","500-1000","1000-5000",">5000"))
 cred_no_voucher
 
 
@@ -319,7 +326,7 @@ cred_no_voucher
 
 
 ```{r}
-cred_voucher %>% ggplot(aes(x = median_price, y = installments)) +
+cred_no_voucher %>% ggplot(aes(x = value_range, y = median_ins)) +
   geom_point() +
   geom_line(group = 1) +
   labs(x ="Median Price" , y = "Number of Installments")
@@ -327,16 +334,14 @@ cred_voucher %>% ggplot(aes(x = median_price, y = installments)) +
 ```
 
 ```{r}
-ggplot() +
-  geom_point(data = cred_voucher, 
-             aes(x = median_price, y = installments)) +
-  geom_point(data = cred_no_voucher, 
-             aes(x = median_price, y = installments)) +
-  geom_line(data = cred_voucher, 
-            aes(x = median_price, y = installments, group = 1)) +
-  geom_line(data = cred_no_voucher, 
-            aes(x = median_price, y = installments, group = 1),
-            color = "darkred") +
+voucher_ins <- rbind(cred_voucher,cred_no_voucher)
+```
+
+```{r}
+ggplot(data = voucher_ins, aes(x = value_range, y = median_ins,
+                               colour = voucher, group = voucher))+
+  geom_point() +
+  geom_line() +
   labs(x ="Median Price" , y = "Number of Installments")
 ```
 
