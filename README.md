@@ -1,5 +1,5 @@
 # AM10_Group_2
-![logo](olist logo.png "logo")
+![logo](olist_logo.jfif "logo")
 
 ## What is your topic? 
 * Analysis on Brazilian e-commerce website 
