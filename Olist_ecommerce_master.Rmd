@@ -374,7 +374,11 @@ write.csv(to_graph4, "city_sales.csv")
 
 ![tableau visualization 7](gdp_spending_plot.jpg "tableau visualization 7")
 
+Now that we have seen the regions where the most orders are being sent and delivered and the routes these take, it is time to investigate the spending that these customers engage in. Looking into the cities with high traffic, we want to examine two things. 
 
+First of all if there is any pattern in spending related to the wealth of the people in a city, and if there are any inefficiencies that Olist could act on. Plotting this shows us a general trend where the opening per person on Olist products decreases as the GDP per capita in each city decreases. However there is one major outlier in this trend: the capital city Brasilia. 
+
+From our understanding there are two main factors contributing to this. The first one is that the delivery times (as shown in the previous graph) for the Sao Paulo-Brasilia trip are relatively long; above average. While this in itself is not enough to drastically reduce people’s spending, it is certainly a contributing factor. For many goods its may be quicker and more convenient to go buy them in person rather than ordering them from Olist. Secondly, Brasilia is host to the Brazilian government and all related functions. Around 54.8% of the city’s GDP is driven by public administration services, meaning that little of this goes directly to citizens and is hardly distributed amongst the population. Therefore while the city may generate a lot of wealth, not as much is seen by its citizens and so they do not get to spend it on goods as much as people in other cities. Taking these factors into account, this data point makes more sense.
 
 # product category analysis
 ```{r}
