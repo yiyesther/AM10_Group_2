@@ -1,0 +1,234 @@
+---
+title: "Hamish_Plot"
+output: html_document
+---
+
+```{r setup, echo=FALSE, message=FALSE, include = FALSE}
+knitr::opts_chunk$set(
+  message = FALSE, 
+  warning = FALSE, 
+  tidy=FALSE,     # display code as typed
+  size="small")   # slightly smaller font for code
+options(scipen=999)
+
+# default figure size
+knitr::opts_chunk$set(
+  fig.align = "center"
+)
+```
+
+
+
+```{r, echo=FALSE, message=FALSE, include = FALSE}
+library(tidyverse)
+library(lubridate)
+library(ggmap)
+library(ggrepel)
+library(gridExtra)
+library(pander)
+library(here)
+library(janitor)
+library(skimr)
+library(leaflet)
+library(tmap)
+library(tmaptools)
+library(hrbrthemes)
+library(mapview)
+library(viridis)
+library(vroom)
+library(sf)
+library(geobr)
+```
+
+```{r import data, message=FALSE}
+
+products <- read.csv(file = 'olist_products_dataset.csv')
+head(products)
+
+sellers <- read.csv(file = 'olist_sellers_dataset.csv')
+head(products)
+
+orders <- read.csv(file = 'olist_orders_dataset.csv')
+head(products)
+
+geolocation <- read.csv(file = 'olist_geolocation_dataset.csv')
+head(products)
+
+customers <- read.csv(file = 'olist_customers_dataset.csv')
+head(products)
+```
+
+
+
+```{r}
+unique(customers$customer_state)
+```
+
+```{r}
+customers <- customers %>% 
+  mutate(state_name = case_when(customer_state == "SP" ~ "São Paulo", 
+                               customer_state == "SC" ~ "Santa Catarina",
+                               customer_state == "MG" ~ "Minas Gerais", 
+                               customer_state == "PR" ~ "Parana",
+                               customer_state == "RJ" ~ "Rio de Janeiro",
+                               customer_state == "RS" ~ "Rio Grande do Sul",
+                               customer_state == "PA" ~ "Para",
+                               customer_state == "GO" ~ "Goias",
+                               customer_state == "ES" ~ "Espirito Santo",
+                               customer_state == "BA" ~ "Bahia",
+                               customer_state == "MA" ~ "Maranhao",
+                               customer_state == "MS" ~ "Mato Grosso do Sul",
+                               customer_state == "CE" ~ "Ceara",
+                               customer_state == "DF" ~ "Distrito Federal",
+                               customer_state == "RN" ~ "Rio Grande do Norte",
+                               customer_state == "PE" ~ "Pernambuco",
+                               customer_state == "MT" ~ "Mato Grosso",
+                               customer_state == "AM" ~ "Amazonas",
+                               customer_state == "AP" ~ "Amapa",
+                               customer_state == "AL" ~ "Alagoas",
+                               customer_state == "RO" ~ "Rondonia",
+                               customer_state == "PB" ~ "Paraiba",
+                               customer_state == "TO" ~ "Tocantins",
+                               customer_state == "PI" ~ "Piaui",
+                               customer_state == "AC" ~ "Acre",
+                               customer_state == "SE" ~ "Sergipe",
+                               customer_state == "RR" ~ "Roraima",)
+)
+```
+
+
+```{r}
+sellers <- sellers %>% 
+  mutate(state_name = case_when(seller_state == "SP" ~ "São Paulo", 
+                               seller_state == "SC" ~ "Santa Catarina",
+                               seller_state == "MG" ~ "Minas Gerais", 
+                               seller_state == "PR" ~ "Parana",
+                               seller_state == "RJ" ~ "Rio de Janeiro",
+                               seller_state == "RS" ~ "Rio Grande do Sul",
+                               seller_state == "PA" ~ "Para",
+                               seller_state == "GO" ~ "Goias",
+                               seller_state == "ES" ~ "Espirito Santo",
+                               seller_state == "BA" ~ "Bahia",
+                               seller_state == "MA" ~ "Maranhao",
+                               seller_state == "MS" ~ "Mato Grosso do Sul",
+                               seller_state == "CE" ~ "Ceara",
+                               seller_state == "DF" ~ "Distrito Federal",
+                               seller_state == "RN" ~ "Rio Grande do Norte",
+                               seller_state == "PE" ~ "Pernambuco",
+                               seller_state == "MT" ~ "Mato Grosso",
+                               seller_state == "AM" ~ "Amazonas",
+                               seller_state == "AP" ~ "Amapa",
+                               seller_state == "AL" ~ "Alagoas",
+                               seller_state == "RO" ~ "Rondonia",
+                               seller_state == "PB" ~ "Paraiba",
+                               seller_state == "TO" ~ "Tocantins",
+                               seller_state == "PI" ~ "Piaui",
+                               seller_state == "AC" ~ "Acre",
+                               seller_state == "SE" ~ "Sergipe",
+                               seller_state == "RR" ~ "Roraima",)
+)
+```
+
+```{r}
+customer_locations <- customers %>%
+  count(customer_state) %>% 
+  mutate(proportion = n/sum(n) * 100)
+
+seller_locations <- sellers %>%
+  count(seller_state) %>%
+  mutate(proportion = n/sum(n) * 100)
+
+customer_locations2 <- customers %>%
+  count(customer_state) 
+
+seller_locations2 <- sellers %>%
+  count(seller_state)
+```
+
+
+
+```{r}
+datasets <- list_geobr()
+print(datasets, n=21)
+
+#state <- read_state(code_state="SE", year=2018)
+meso <- read_intermediate_region(year=2020)
+states <- read_state(year=2020)
+```
+
+
+
+```{r}
+# Importing city data for Brazil
+
+cities <- read.csv(file = 'br.csv')
+head(cities)
+
+cities <- cities %>%
+  filter(population > 2500000)
+
+```
+
+
+
+```{r}
+# Remove plot axis
+  no_axis <- theme(axis.title=element_blank(),
+                   axis.text=element_blank(),
+                   axis.ticks=element_blank(),
+                   panel.grid.major = element_blank(),
+                   panel.grid.minor = element_blank())
+
+
+
+# Plot all Brazilian states
+  ggplot() +
+    geom_sf(data=states, fill="#2D3E50", color="#FEBF57", size=.15, show.legend = FALSE) +
+    labs(subtitle="States", size=8) +
+    theme_minimal() +
+    no_axis+
+    geom_point(data = cities, aes(x = lng, y = lat), size = 2.2, colour = "red")+
+    NULL
+```
+
+
+```{r}
+states2 <- dplyr::left_join(states, customer_locations, by = c("abbrev_state" = "customer_state"))
+```
+
+
+
+```{r}
+ggplot() +
+    geom_sf(data=states2, aes(fill=proportion), color= "black", size=.12) +
+      labs(title=bquote("Distribution of" ~bold("OList Customers")~ "by Brazilian State: 2016 - 2018"), size=15, subtitle = "Including the locations of Brazil's 5 largest cities") +
+      scale_fill_distiller(palette = "Spectral", name = "Proportion of Total Customers (%)", limits = c(0,50))+
+      theme_minimal()+
+      geom_point(data = cities, aes(x = lng, y = lat), size = 2.2, colour = "gray11")+
+      geom_label_repel(data = cities, aes(x = lng, y = lat, label=city), box.padding = 0.5, size = 3, nudge_x = 0.1, max.overlaps = Inf) +
+      no_axis
+```
+
+
+
+
+```{r}
+states3 <- dplyr::left_join(states, seller_locations, by = c("abbrev_state" = "seller_state"))
+states3[is.na(states3)] <- 0
+```
+
+
+```{r}
+ggplot() +
+    geom_sf(data=states3, aes(fill=proportion), color= "black", size=.12) +
+      labs(title=bquote("Distribution of" ~bold("OList Sellers")~ "by Brazilian State: 2016 - 2018"), size=15, subtitle = "Including the locations of Brazil's 5 largest cities")+
+      scale_fill_distiller(palette = "Spectral", name = "Proportion of Total Sellers (%)", limits = c(0, 60))+
+      geom_point(data = cities, aes(x = lng, y = lat), size = 2.2, colour = "gray11")+
+      geom_label_repel(data = cities, aes(x = lng, y = lat, label=city), box.padding = 0.5, size = 3, nudge_x = 0.1, max.overlaps = Inf) +
+      theme_minimal() +
+      no_axis
+```
+
+
+
+
