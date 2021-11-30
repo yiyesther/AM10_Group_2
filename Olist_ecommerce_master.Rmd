@@ -272,7 +272,6 @@ brazil_color_scale2 <- c('#ffffff', '#009c3b')
 ggplot() +
     geom_sf(data=states3, aes(fill=proportion), color= "black", size=.12) +
       labs(title=bquote("Distribution of" ~bold("OList Sellers")~ "by Brazilian State: 2016 - 2018"), size=15, subtitle = "Including the locations of Brazil's 5 largest cities")+
-      #scale_fill_distiller(palette = "Spectral", name = "Proportion of Total Sellers (%)", limits = c(0, 60))+
       scale_fill_gradientn(colours = brazil_color_scale2, name = "Proportion of Customer base (%)")+
 
       geom_point(data = cities, aes(x = lng, y = lat), size = 2.2, colour = "gray11")+
@@ -741,69 +740,6 @@ voucher_ins <- rbind(cred_voucher,cred_no_voucher)
 voucher_ins$voucher <- factor(voucher_ins$voucher, levels = c("Yes","No"))
 ```
 
-```{r,fig.height=6, fig.width=8}
-
-label1 <- "At very high price, using \n credit cards do not necessarily \n link to affordability."
-label2 <- "For the same value, customers \n pay with more installments if it's \n the remaining value after deducting voucher."
-
-ggplot(data = voucher_ins, aes(x = value_range, y = median_ins,
-                               colour = voucher, group = voucher))+
-  geom_point() +
-  geom_line() +
-  labs(title = "Vouchers entice people to purchase even if they need more installments",
-       subtitle = "Median number of installments used by customers paying with credit cards for the total price or the remaining value after using vouchers",
-  x ="Value Range" , y = "Median Number of Installments",
-       colour = "Voucher") +
-  
-  geom_curve(
-    data = data.frame(x = 5.5, y = 3.2, xend = 6, yend = 4.3),
-    mapping = aes(x = x, y = y, xend = xend, yend = yend),
-    colour = "darkred",
-    size = 0.5,
-    curvature = 0.25,
-    arrow = arrow(length = unit(2, "mm"), type = "closed"),
-    inherit.aes = FALSE
-  ) +
-  
-   geom_curve(
-    data = data.frame(x = 2.7, y = 4, xend = 2, yend = 4.4),
-    mapping = aes(x = x, y = y, xend = xend, yend = yend),
-    colour = "darkred",
-    size = 0.5,
-    curvature = -0.25,
-    arrow = arrow(length = unit(2, "mm"), type = "closed"),
-    inherit.aes = FALSE
-  ) +
-  
-  geom_text(
-    data = data.frame(x = 5, y = 3, label = label1),
-    aes(x = x, y = y, label = label),
-    colour="navyblue",
-    family="Lato",
-    hjust = 0.5,
-    lineheight = .8,
-    inherit.aes = FALSE
-  ) +
-    geom_text(
-    data = data.frame(x = 2.5, y = 5, label = label2),
-    aes(x = x, y = y, label = label),
-    colour="navyblue",
-    family="Lato",
-    hjust = 0.5,
-    lineheight = .8,
-    inherit.aes = FALSE
-  ) +
-  
-  #annotate("rect", xmin = 2.9, xmax = 3.1, ymin = 2.8, ymax = 4.2, alpha = 0.2) +
-  #annotate("text", x = 2, y = 4.8, label = label2, colour = "orange") +
-  theme_minimal() +
-  theme(strip.text = element_text(color = "white",size = 20),
-        strip.text.y = element_text(angle=0),
-        plot.title = element_text(size = 15),
-        plot.subtitle = element_text(size = 10),
-        axis.title.x = element_text(hjust = 0.5, size = 10),
-        axis.title.y = element_text(hjust = 0.5, size = 10))
-```
 
 ```{r,fig.height=6, fig.width=10}
 
@@ -864,4 +800,8 @@ ggplot(data = voucher_ins, aes(x = value_range, y = median_ins,
 Let's assume number of installments can represent how affordable the good is relatively to the customer. The higher number of installments, the more "expensive" the good appears. For the same number of installments, "voucher : left value" has a lower value range than "full price". This means that people who pay the left value of (100-200) see the good as expensive as people who buy at full price of 200-500. For the voucher users, their purchasing power is lower.
 
 # conclusion
-
+Following our objective, which is to make strategic recommendations for OList, we have summarized the following. 
+1. The most buyers and sellers are from major cities in the Southeast Brazil, with less saturated geolocations that are possible for OList's next market entry, for example Guarulhos. 
+2. For a successful market entry to take place, OList needs to promote attractive products such as "Health and Beauty", and omit the poor performing ones such as "fashion male clothing". 
+3. The most pressing issue of the poor performing products is delayed delivery, and we found that major cities has serious delay, for example from Ibitinga to Rio de Janeiro. 
+4. To better understand customer's buying behaviour, we found that vouchers entice customers to purchase even if they need more installments. 
