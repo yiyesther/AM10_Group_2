@@ -477,7 +477,7 @@ write.csv(to_graph4, "city_sales.csv")
 
 ```
 
-![tableau visualization 7](gdp_spending_plot.jpg "tableau visualization 7")
+![tableau visualization 7](gdp_spending_plot.png "tableau visualization 7")
 
 Now that we have seen the regions where the most orders are being sent and delivered and the routes these take, it is time to investigate the spending that these customers engage in. Looking into the cities with high traffic, we want to examine two things. 
 
