@@ -17,7 +17,7 @@
 ![schema](schema.png "schema")
 
 
-## Structure and 'Story' of our analysis. 
+## Structure and 'Story' of our analysis 
 
 The main aim of this project is to analyse data associated with the retailer 'OList' in Brazil, to see if we can develop insights and suggestions that may improve the company's business operations. 
 
@@ -29,8 +29,14 @@ We will also compare the average spending power per customer with the average GD
 
 Once we have analysed the regional characteristics of the consumer base, and made suggestions that could improve growth and better exploit certain regional discrepancies and opportunities, we will focus more on the social/demographic characteristics, to see which demographic consumer bases are most common and which product types are most frequently purchased. This will allow us to see which products are being sold most effectively. We will also look at customer satisfaction to determine which product types are not being well handled by OList - we will attempt to understand why this is and also suggest potential improvements for how OList can improve customer satisfaction for certain product types. 
 
-Finally, once we have better understood the main regional and demographic concerns, as well as the most (and least) successful OList products, we will examine the effects of vouchers on consumer behaviours. This will offer a final insight into whether promotional strategies surrounding discounts/vouchers may be effective in drawing further profit. This may help inform our framework for future promotional strategies
+Finally, once we have better understood the main regional and demographic concerns, as well as the most (and least) successful OList products, we will examine the effects of vouchers on consumer behaviours. This will offer a final insight into whether promotional strategies surrounding discounts/vouchers may be effective in drawing further profit. This may help inform our framework for future promotional strategies. 
 
+## Key findings / conclusions
+Following our objective, which is to make strategic recommendations for OList, we have summarized the following. 
+1. The most buyers and sellers are from major cities in the Southeast Brazil, with less saturated geolocations that are possible for OList's next market entry, for example Guarulhos. 
+2. For a successful market entry to take place, OList needs to promote attractive products such as "Health and Beauty", and omit the poor performing ones such as "fashion male clothing". 
+3. The most pressing issue of the poor performing products is delayed delivery, and we found that major cities has serious delay, for example from Ibitinga to Rio de Janeiro. 
+4. To better understand customer's buying behaviour, we found that vouchers entice customers to purchase even if they need more installments. 
 
 ## What statistical techniques do you think you may be using?
 * We used linear regression to see the courier efficiency.  
