@@ -33,5 +33,5 @@ Finally, once we have better understood the main regional and demographic concer
 
 
 ## What statistical techniques do you think you may be using?
-* We can compare ratings of product categories by using confidence intervals to see if they are significantly different. 
-* We will use K-means or K-nearest-neighbour (KNN) for clustering customers.
+* We used linear regression to see the courier efficiency.  
+* Basic statistical techniques (mean, median, percentage, standard deviation, etc.).
